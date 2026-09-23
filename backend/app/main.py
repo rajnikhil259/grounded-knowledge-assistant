@@ -33,6 +33,13 @@ app.add_middleware(
 def health():
     return {"status": "ok"}
 
+@app.get("/debug-cors")
+def debug_cors():
+    """TEMPORARY - remove once CORS is confirmed working."""
+    return {
+        "allowed_origins": ALLOWED_ORIGINS,
+        "raw_env_var": os.getenv("ALLOWED_ORIGINS", "<<not set>>"),
+    }
 
 @app.post("/ask")
 def ask(req: AskRequest):
