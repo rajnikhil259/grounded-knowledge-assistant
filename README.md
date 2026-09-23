@@ -120,3 +120,9 @@ were flagged as unsupported, and why. The UI also shows this inline, as a collap
 - The evaluation sets are small (12-16 questions). Real deployment would need a larger,
   continuously updated set, ideally including questions sourced from actual user traffic.
 
+## Live demo
+- App: https://grounded-knowledge-assistant.vercel.app
+- API docs: https://grounded-knowledge-assistant.onrender.com/docs
+
+Note: hosted on free tiers (Render + Neon), so the first request after ~15 minutes of
+inactivity may take 10-20+ seconds while the server and database wake up.
