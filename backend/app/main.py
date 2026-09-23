@@ -1,4 +1,5 @@
 """FastAPI layer: exposes the graph over HTTP for the React UI."""
+import os
 import shutil
 import tempfile
 from contextlib import asynccontextmanager
@@ -13,6 +14,13 @@ from .db import get_conn, init_db
 from .ingest import SUPPORTED, ingest_file
 from .schemas import AskRequest
 
+# Local dev origins are always allowed. Add your deployed UI's URL via the
+# ALLOWED_ORIGINS env var (comma-separated) once it's live - e.g. on Render's dashboard:
+# ALLOWED_ORIGINS=https://your-app.vercel.app
+_default_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+_extra_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+ALLOWED_ORIGINS = _default_origins + _extra_origins
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -23,7 +31,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="Grounded Knowledge Assistant", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -33,13 +41,16 @@ app.add_middleware(
 def health():
     return {"status": "ok"}
 
+
 @app.get("/debug-cors")
 def debug_cors():
-    """TEMPORARY - remove once CORS is confirmed working."""
+    """TEMPORARY - remove once CORS is confirmed working. Shows exactly what this
+    running process loaded for ALLOWED_ORIGINS, so we can stop guessing."""
     return {
         "allowed_origins": ALLOWED_ORIGINS,
         "raw_env_var": os.getenv("ALLOWED_ORIGINS", "<<not set>>"),
     }
+
 
 @app.post("/ask")
 def ask(req: AskRequest):
@@ -76,6 +87,9 @@ def collections():
 def stats():
     return metrics.get_stats()
 
+
 @app.get("/retries")
 def retries():
+    """Every past question that needed at least one retry - shows exactly what the
+    validator rejected and why, before the corrected answer was produced."""
     return metrics.get_retries()
